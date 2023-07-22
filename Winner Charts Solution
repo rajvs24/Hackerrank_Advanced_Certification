@@ -1,0 +1,17 @@
+WITH ranked_scores AS (
+    SELECT event_id, participant_name, score,
+    DENSE_RANK() OVER (PARTITION BY event_id ORDER BY score DESC) AS `rank`
+    FROM (
+        SELECT event_id, participant_name, MAX(score) AS score
+        FROM scoretable
+        GROUP BY event_id, participant_name
+    ) AS max_scores
+)
+SELECT event_id,
+GROUP_CONCAT(CASE WHEN `rank` = 1 THEN participant_name END ORDER BY participant_name) AS rank_1_names,
+GROUP_CONCAT(CASE WHEN `rank` = 2 THEN participant_name END ORDER BY participant_name) AS rank_2_names,
+GROUP_CONCAT(CASE WHEN `rank` = 3 THEN participant_name END ORDER BY participant_name) AS rank_3_names
+FROM ranked_scores
+WHERE `rank` <= 3
+GROUP BY event_id
+ORDER BY event_id;
